@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eL Predict - Kalkulator Prediksi Sepak Bola 1X2</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        pitch: {
+                            800: '#0f172a',
+                            900: '#0b1329',
+                            950: '#050a18',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050a18;
+            color: #f1f5f9;
+        }
+
+        /* Glassmorphism Card Effects */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Custom Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 6px; cursor: pointer;
+            background: #1e293b; border-radius: 999px; border: 1px solid #334155;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px; width: 18px; border-radius: 50%;
+            background: #10b981; cursor: pointer; -webkit-appearance: none;
+            margin-top: -6px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            transition: all 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15); background: #34d399;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 pb-12">
+
+    <!-- NAVIGATION HEADER -->
+    <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-futbol"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg font-black tracking-tight text-white">eL Predict</h1>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Kalkulator Prediksi & Simulator Probabilitas Poisson 1X2</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <button onclick="openCustomTeamsModal()" class="text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 font-semibold px-3.5 py-2 rounded-xl border border-emerald-500/30 transition flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-folder-closed text-emerald-400"></i>
+                    <span class="hidden sm:inline">Kelola Tim</span>
+                    <span id="savedTeamsCounter" class="bg-emerald-500 text-slate-950 text-[10px] font-black px-1.5 py-0.2 rounded-full ml-1">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400">
+        <i class="fa-solid fa-circle-check text-lg"></i>
+        <span id="toast-message" class="font-medium text-sm">Aksi berhasil dilakukan!</span>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT PANEL: Inputs (5 Cols) -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="glass-card rounded-2xl p-5 shadow-xl">
+                    
+                    <!-- GLOBAL SETTING: TOTAL MATCHES TO ANALYZE -->
+                    <div class="bg-indigo-950/40 p-3.5 rounded-xl border border-indigo-500/30 mb-5 flex items-center justify-between">
+                        <div>
+                            <label class="block text-xs font-bold text-indigo-300 mb-0.5"><i class="fa-solid fa-layer-group mr-1.5"></i>Jumlah Laga Dianalisis</label>
+                            <p class="text-[10px] text-indigo-400/70">Tentukan rentang laga (Max: 50)</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="totalMatchesInput" min="1" max="50" value="10" onblur="updateTotalMatches()" onkeydown="if(event.key==='Enter') this.blur()" class="w-16 bg-slate-900 border border-indigo-500/50 rounded-lg px-2 py-1.5 text-sm text-center text-white font-bold focus:outline-none focus:border-indigo-400">
+                            <span class="text-xs text-indigo-300 font-semibold">Laga</span>
+                        </div>
+                    </div>
+
+                    <!-- DIRECT TEAM NAME INPUTS -->
+                    <div class="bg-slate-950/90 p-3.5 rounded-xl border border-slate-800 mb-5 space-y-3">
+                        <div class="text-xs font-bold text-slate-300 border-b border-slate-800 pb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-shield-halved text-emerald-400"></i> Nama Tim Pertandingan
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-emerald-400 mb-1">Tim Home (Kandang):</label>
+                                <div class="relative">
+                                    <input type="text" id="homeTeamName" value="Arsenal" oninput="calculateMatch()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 transition pl-8">
+                                    <i class="fa-solid fa-house-user text-slate-500 absolute left-2.5 top-2.5 text-xs"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-indigo-400 mb-1">Tim Away (Tandang):</label>
+                                <div class="relative">
+                                    <input type="text" id="awayTeamName" value="Chelsea" oninput="calculateMatch()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 transition pl-8">
+                                    <i class="fa-solid fa-plane-arrival text-slate-500 absolute left-2.5 top-2.5 text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB SWITCHER -->
+                    <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4">
+                        <button id="tabBtnSlider" onclick="switchInputTab('slider')" class="flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 bg-emerald-600 text-white shadow-md">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span>Slider Interaktif</span>
+                        </button>
+                        <button id="tabBtnNumber" onclick="switchInputTab('number')" class="flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white">
+                            <i class="fa-solid fa-list-ol"></i>
+                            <span>Input Nomor (1-8)</span>
+                        </button>
+                    </div>
+
+                    <!-- SLIDER MODE PANEL -->
+                    <div id="inputModeSlider" class="space-y-5">
+                        <!-- HOME TEAM STATS CARD -->
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                                <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-house-circle-check text-emerald-400"></i> Stat Kandang <span class="dynamic-match-count-text text-[10px] text-slate-400 font-normal ml-1">(Per 10 Pertandingan)</span>
+                                </span>
+                                <span id="homeBadge" class="text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-2 py-0.5 rounded-md"></span>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center text-xs mb-1">
+                                    <span class="text-slate-300">Menang (Home Wins):</span>
+                                    <span id="homeWinsVal" class="font-bold text-emerald-400">7 Match</span>
+                                </div>
+                                <input type="range" id="homeWins" min="0" max="10" value="7" step="1" oninput="handleHomeWinsInput()">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center text-xs mb-1">
+                                    <span class="text-slate-300">Seri (Home Draws):</span>
+                                    <span id="homeDrawsVal" class="font-bold text-amber-400">2 Match</span>
+                                </div>
+                                <input type="range" id="homeDraws" min="0" max="10" value="2" step="1" oninput="handleHomeDrawsInput()">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center text-xs mb-1">
+                                    <span class="text-slate-300">Total Gol Cetak <span class="dynamic-match-count-text text-[9px] text-slate-500">(Per 10 Pertandingan)</span>:</span>
+                                    <span id="homeScoredVal" class="font-bold text-emerald-400">24 Gol</span>
+                                </div>
+                                <input type="range" id="homeScored" min="0" max="100" value="24" step="1" oninput="handleSliderChange()">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center text-xs mb-1">
+                                    <span class="text-slate-300">Total Kebobolan <span class="dynamic-match-count-text text-[9px] text-slate-500">(Per 10 Pertandingan)</span>:</span>
+                                    <span id="homeConcededVal" class="font-bold text-rose-400">8 Gol</span>
+                                </div>
+                                <input type="range" id="homeConceded" min="0" max="100" value="8" step="1" oninput="handleSliderChange()">
+                            </div>
+
+                            <div class="pt-1">
+                                <button onclick="saveTeamStats('home')" class="w-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 font-bold py-2.5 px-3 rounded-lg border border-emerald-500/30 text-xs transition flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-floppy-disk text-emerald-400"></i>
+                                    <span>Simpan Khusus Data Kandang (Home)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- AWAY TEAM STATS CARD -->
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                                <span class="text-xs font-bold text-indigo-400 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-plane-departure text-indigo-400"></i> Stat Tandang <span class="dynamic-match-count-text text-[10px] text-slate-400 font-normal ml-1">(Per 10 Pertandingan)</span>
+                                </span>
+                                <span id="awayBadge" class="text-[11px] font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-2 py-0.5 rounded-md"></span>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center text-xs mb-1">
+                                    <span class="text-slate-300">Menang (Away Wins):</span>
+                                    <span id="awayWinsVal" class="font-bold text-indigo-400">4 Match</span>
+                                </div>
+                                <input type="range" id="awayWins" min="0" max="10" value="4" step="1" oninput="handleAwayWinsInput()">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center text-xs mb-1">
+                                    <span class="text-slate-300">Seri (Away Draws):</span>
+                                    <span id="awayDrawsVal" class="font-bold text-amber-400">3 Match</span>
+                                </div>
+                                <input type="range" id="awayDraws" min="0" max="10" value="3" step="1" oninput="handleAwayDrawsInput()">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center text-xs mb-1">
+                                    <span class="text-slate-300">Total Gol Cetak <span class="dynamic-match-count-text text-[9px] text-slate-500">(Per 10 Pertandingan)</span>:</span>
+                                    <span id="awayScoredVal" class="font-bold text-indigo-400">15 Gol</span>
+                                </div>
+                                <input type="range" id="awayScored" min="0" max="100" value="15" step="1" oninput="handleSliderChange()">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center text-xs mb-1">
+                                    <span class="text-slate-300">Total Kebobolan <span class="dynamic-match-count-text text-[9px] text-slate-500">(Per 10 Pertandingan)</span>:</span>
+                                    <span id="awayConcededVal" class="font-bold text-rose-400">16 Gol</span>
+                                </div>
+                                <input type="range" id="awayConceded" min="0" max="100" value="16" step="1" oninput="handleSliderChange()">
+                            </div>
+
+                            <div class="pt-1">
+                                <button onclick="saveTeamStats('away')" class="w-full bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 font-bold py-2.5 px-3 rounded-lg border border-indigo-500/30 text-xs transition flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-floppy-disk text-indigo-400"></i>
+                                    <span>Simpan Khusus Data Tandang (Away)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NUMBERED MODE PANEL -->
+                    <div id="inputModeNumber" class="hidden space-y-5">
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <div class="text-xs font-bold text-emerald-400 border-b border-slate-800 pb-2 flex items-center justify-between">
+                                <span><i class="fa-solid fa-list-ol mr-1.5"></i> Parameter Berurutan (1 - 8)</span>
+                                <span class="dynamic-match-count-text text-[10px] text-slate-400 font-normal">Per 10 Pertandingan</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <label class="block text-slate-300 font-semibold mb-1 flex items-center justify-between">
+                                        <span><span class="text-emerald-400 font-bold">1.</span> Home Win</span>
+                                        <span class="text-[10px] text-slate-500">Max <span class="dynamic-match-count-label">10 Laga</span></span>
+                                    </label>
+                                    <input type="number" id="num1" min="0" max="10" value="7" oninput="handleNumberedInputChange('num1')" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white font-bold text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <label class="block text-slate-300 font-semibold mb-1 flex items-center justify-between">
+                                        <span><span class="text-amber-400 font-bold">2.</span> Home Draw</span>
+                                        <span class="text-[10px] text-slate-500">Max <span class="dynamic-match-count-label">10 Laga</span></span>
+                                    </label>
+                                    <input type="number" id="num2" min="0" max="10" value="2" oninput="handleNumberedInputChange('num2')" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white font-bold text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <label class="block text-slate-300 font-semibold mb-1 flex items-center justify-between">
+                                        <span><span class="text-emerald-400 font-bold">3.</span> Home Gol Cetak</span>
+                                    </label>
+                                    <input type="number" id="num3" min="0" max="100" value="24" oninput="handleNumberedInputChange('num3')" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white font-bold text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <label class="block text-slate-300 font-semibold mb-1 flex items-center justify-between">
+                                        <span><span class="text-rose-400 font-bold">4.</span> Home Kebobolan</span>
+                                    </label>
+                                    <input type="number" id="num4" min="0" max="100" value="8" oninput="handleNumberedInputChange('num4')" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white font-bold text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <label class="block text-slate-300 font-semibold mb-1 flex items-center justify-between">
+                                        <span><span class="text-indigo-400 font-bold">5.</span> Away Win</span>
+                                        <span class="text-[10px] text-slate-500">Max <span class="dynamic-match-count-label">10 Laga</span></span>
+                                    </label>
+                                    <input type="number" id="num5" min="0" max="10" value="4" oninput="handleNumberedInputChange('num5')" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white font-bold text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <label class="block text-slate-300 font-semibold mb-1 flex items-center justify-between">
+                                        <span><span class="text-amber-400 font-bold">6.</span> Away Draw</span>
+                                        <span class="text-[10px] text-slate-500">Max <span class="dynamic-match-count-label">10 Laga</span></span>
+                                    </label>
+                                    <input type="number" id="num6" min="0" max="10" value="3" oninput="handleNumberedInputChange('num6')" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white font-bold text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <label class="block text-slate-300 font-semibold mb-1 flex items-center justify-between">
+                                        <span><span class="text-indigo-400 font-bold">7.</span> Away Gol Cetak</span>
+                                    </label>
+                                    <input type="number" id="num7" min="0" max="100" value="15" oninput="handleNumberedInputChange('num7')" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white font-bold text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <label class="block text-slate-300 font-semibold mb-1 flex items-center justify-between">
+                                        <span><span class="text-rose-400 font-bold">8.</span> Away Kebobolan</span>
+                                    </label>
+                                    <input type="number" id="num8" min="0" max="100" value="16" oninput="handleNumberedInputChange('num8')" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white font-bold text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Calculations & Charts (7 Cols) -->
+            <div class="lg:col-span-7 space-y-6">
+
+                <!-- Primary Match Result Overview Header -->
+                <div class="glass-card rounded-2xl p-5 bg-gradient-to-br from-slate-900 via-slate-900 to-pitch-900 border-emerald-500/30 relative overflow-hidden">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+                        <div class="space-y-1">
+                            <span class="text-[11px] font-semibold tracking-wider text-emerald-400 uppercase">Ekspektasi Gol (xG) Matchup</span>
+                            <div class="text-xl font-extrabold text-white flex items-center justify-center sm:justify-start gap-3">
+                                <span id="displayHomeName" class="text-emerald-400">Arsenal</span>
+                                <span class="text-xs text-slate-500 font-normal">VS</span>
+                                <span id="displayAwayName" class="text-indigo-400">Chelsea</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 bg-slate-950/80 px-4 py-2.5 rounded-xl border border-slate-800">
+                            <div class="text-center">
+                                <div id="xGHomeText" class="text-lg font-black text-emerald-400">0.00</div>
+                                <div class="text-[10px] text-slate-400">xG Home</div>
+                            </div>
+                            <div class="text-slate-600 font-bold">:</div>
+                            <div class="text-center">
+                                <div id="xGAwayText" class="text-lg font-black text-indigo-400">0.00</div>
+                                <div class="text-[10px] text-slate-400">xG Away</div>
+                            </div>
+                            <div class="border-l border-slate-800 pl-3 text-center">
+                                <div id="totalXGText" class="text-lg font-black text-amber-400">0.00</div>
+                                <div class="text-[10px] text-slate-400">Total xG</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1X2 Probabilities & Fair Odds Grid -->
+                <div class="glass-card rounded-2xl p-5">
+                    <h3 class="text-sm font-bold text-white mb-3 flex items-center justify-between">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-emerald-400"></i> Probabilitas Pasar 1X2 & Odds Adil
+                        </span>
+                        <span class="text-xs text-slate-400 font-normal">Poisson Sum Matrix</span>
+                    </h3>
+
+                    <div class="h-44 w-full mb-5">
+                        <canvas id="outcomeChart"></canvas>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-slate-950 p-3 rounded-xl border border-emerald-500/30 text-center">
+                            <div class="text-[11px] font-semibold text-slate-400 mb-1">Tuan Rumah (1)</div>
+                            <div id="probHome" class="text-xl font-black text-emerald-400">0%</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Odds Adil: <span id="oddsHome" class="text-white font-bold">0.00</span></div>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-amber-500/30 text-center">
+                            <div class="text-[11px] font-semibold text-slate-400 mb-1">Seri (X)</div>
+                            <div id="probDraw" class="text-xl font-black text-amber-400">0%</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Odds Adil: <span id="oddsDraw" class="text-white font-bold">0.00</span></div>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-indigo-500/30 text-center">
+                            <div class="text-[11px] font-semibold text-slate-400 mb-1">Tamu (2)</div>
+                            <div id="probAway" class="text-xl font-black text-indigo-400">0%</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Odds Adil: <span id="oddsAway" class="text-white font-bold">0.00</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="glass-card rounded-2xl p-4 space-y-3">
+                        <h4 class="text-xs font-bold text-white flex items-center justify-between border-b border-slate-800 pb-2">
+                            <span><i class="fa-solid fa-arrow-up-right-dots text-emerald-400 mr-1.5"></i>Pasaran Over / Under</span>
+                            <span class="text-[10px] text-slate-400">Probabilitas Total Gol</span>
+                        </h4>
+                        
+                        <div class="space-y-2.5">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Over 1.5 Gol</span>
+                                    <span id="ou15Val" class="font-bold text-emerald-400">0%</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                                    <div id="ou15Bar" class="h-full bg-emerald-500 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Over 2.5 Gol</span>
+                                    <span id="ou25Val" class="font-bold text-emerald-400">0%</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                                    <div id="ou25Bar" class="h-full bg-emerald-500 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Over 3.5 Gol</span>
+                                    <span id="ou35Val" class="font-bold text-emerald-400">0%</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                                    <div id="ou35Bar" class="h-full bg-emerald-500 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-4 flex flex-col justify-between space-y-3">
+                        <div>
+                            <h4 class="text-xs font-bold text-white flex items-center justify-between border-b border-slate-800 pb-2">
+                                <span><i class="fa-solid fa-bullseye text-cyan-400 mr-1.5"></i>Both Teams to Score (BTTS)</span>
+                                <span id="bttsVal" class="text-xs font-bold text-cyan-400">0%</span>
+                            </h4>
+                            <div class="mt-2.5 space-y-1.5 text-xs">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">BTTS Ya (Kedua Tim Cetak Gol):</span>
+                                    <span id="bttsYesText" class="font-semibold text-emerald-400">0%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">BTTS Tidak:</span>
+                                    <span id="bttsNoText" class="font-semibold text-slate-300">0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-[11px] leading-relaxed space-y-1">
+                            <div>
+                                <span class="text-emerald-400 font-bold"><i class="fa-solid fa-crosshairs mr-1"></i> Rekomendasi 1X2 / DC:</span>
+                                <span id="recommendation1X2DC" class="text-white font-bold"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GEMINI AI MATCH ANALYST & CHAT WIDGET -->
+                <div class="glass-card rounded-2xl p-5 border-emerald-500/40 bg-slate-900/90 relative">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-purple-500 to-emerald-400 flex items-center justify-center text-slate-950 font-black text-xs">
+                                <i class="fa-solid fa-wand-magic-sparkles text-white"></i>
+                            </div>
+                            <span>Gemini AI Match Analyst & Chat Assistant</span>
+                        </h3>
+                        <span class="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-semibold">Gemini 3 Flash</span>
+                    </div>
+
+                    <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+                        Dapatkan Analisis Taktis & Value Bet AI berdasarkan data statistik Poisson laga ini.
+                    </p>
+
+                    <button onclick="generateGeminiAnalysis()" id="btnGenerateAI" class="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-600 hover:from-purple-500 hover:to-emerald-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-purple-900/30 border border-purple-400/30 transition flex items-center justify-center gap-2 text-xs mb-4">
+                        <i class="fa-solid fa-brain text-purple-300"></i>
+                        <span id="btnAILabel">Generasikan Analisis Taktis & Value Bet AI</span>
+                    </button>
+
+                    <!-- AI Output Container -->
+                    <div id="aiAnalysisOutput" class="hidden bg-slate-950/80 p-4 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed space-y-3 mb-4 overflow-y-auto max-h-72">
+                        <div class="flex items-center gap-2 text-purple-400 font-bold border-b border-slate-800 pb-2">
+                            <i class="fa-solid fa-square-poll-vertical"></i> Laporan Analisis AI
+                        </div>
+                        <div id="aiAnalysisContent" class="whitespace-pre-wrap font-sans"></div>
+                    </div>
+
+                    <!-- Interactive Chat with Gemini AI -->
+                    <div class="border-t border-slate-800/80 pt-3 space-y-3">
+                        <label class="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-comments text-emerald-400"></i> Tanya Asisten AI (Custom Scenario):
+                        </label>
+                        
+                        <div id="chatHistoryContainer" class="hidden space-y-2 max-h-40 overflow-y-auto bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 text-xs"></div>
+
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="aiUserPrompt" placeholder="Ketik pertanyaan Anda di sini..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 transition">
+                            <button onclick="sendAIChatQuery()" id="btnSendChat" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5 shrink-0">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span class="hidden sm:inline">Kirim</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top 5 Exact Score Predictions -->
+                <div class="glass-card rounded-2xl p-5">
+                    <h3 class="text-sm font-bold text-white mb-3 flex items-center justify-between">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-trophy text-amber-400"></i> Top 5 Prediksi Skor Tepat
+                        </span>
+                    </h3>
+                    <div id="topScoresContainer" class="grid grid-cols-2 sm:grid-cols-5 gap-2.5"></div>
+                </div>
+
+                <!-- Poisson Heatmap Matrix -->
+                <div class="glass-card rounded-2xl p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-table-cells text-emerald-400"></i> Matriks Probabilitas Poisson (0 - 6 Gol)
+                        </h3>
+                        <span class="text-[10px] text-slate-400">Baris: Home | Kolom: Away</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <div class="min-w-[420px]">
+                            <div class="grid grid-cols-8 gap-1 mb-1 text-center font-bold text-[10px] text-indigo-400">
+                                <div class="text-slate-500 font-normal">H \ A</div>
+                                <div>0</div><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div>
+                            </div>
+                            <div id="heatmapGrid" class="space-y-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Copy Report Action Button -->
+                <div class="pt-2">
+                    <button onclick="copyPredictionSummary()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-emerald-600/20 border border-emerald-400/30 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Salin Ringkasan Analisis & Prediksi Ke Clipboard</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom Teams Manager Modal with Text Save & Load -->
+    <div id="customTeamsModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl relative">
+            <button onclick="closeCustomTeamsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-folder-open text-emerald-400"></i> Kelola Tim Tersimpan
+                </h3>
+            </div>
+
+            <!-- Modal Filter Tabs -->
+            <div class="flex items-center gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                <button id="modalTabAll" onclick="setModalFilter('all')" class="flex-1 py-1.5 font-bold rounded-lg bg-emerald-600 text-white">Semua Data</button>
+                <button id="modalTabHome" onclick="setModalFilter('home')" class="flex-1 py-1.5 font-bold rounded-lg text-slate-400 hover:text-white">🏠 Data Kandang</button>
+                <button id="modalTabAway" onclick="setModalFilter('away')" class="flex-1 py-1.5 font-bold rounded-lg text-slate-400 hover:text-white">✈️ Data Tandang</button>
+            </div>
+
+            <!-- TEXT BACKUP / RESTORE SECTION -->
+            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-code"></i> Cadangan Data Teks JSON
+                    </span>
+                    <button onclick="exportCustomTeamsText()" class="text-[11px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold px-2.5 py-1 rounded-lg border border-amber-500/30 transition flex items-center gap-1">
+                        <i class="fa-solid fa-copy"></i> Export Teks
+                    </button>
+                </div>
+                <textarea id="importTeamsTextarea" rows="2" placeholder="Tempel JSON teks data tim di sini..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-amber-500 transition"></textarea>
+                <div class="flex justify-end">
+                    <button onclick="importCustomTeamsText()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-file-import"></i> Impor Teks Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- List Container -->
+            <div id="savedTeamsListContainer" class="max-h-72 overflow-y-auto space-y-4 pr-1"></div>
+
+            <div class="pt-2 flex justify-end border-t border-slate-800">
+                <button onclick="closeCustomTeamsModal()" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-4 py-2 rounded-xl text-xs border border-slate-700 transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <textarea id="clipboardBuffer" class="sr-only"></textarea>
+
+    <script>
+        // GLOBAL STATE
+        window.globalTotalMatches = 10;
+        let globalCurrentCalculations = null;
+        let outcomeChartInstance = null;
+        let customTeamsMemory = JSON.parse(localStorage.getItem('eLPredict_CustomTeams') || '[]');
+        let currentModalFilter = 'all';
+
+        // GLOBAL UI HANDLERS
+        window.updateTotalMatches = function() {
+            const inputEl = document.getElementById('totalMatchesInput');
+            let val = parseInt(inputEl.value);
+            
+            // Jika dikosongkan atau tidak valid saat selesai mengetik, kembalikan ke default 10
+            if (isNaN(val) || val < 1) {
+                val = 10;
+                inputEl.value = 10;
+            }
+            if (val > 50) {
+                val = 50;
+                inputEl.value = 50;
+            }
+            
+            window.globalTotalMatches = val;
+
+            // Update UI Max Limits
+            const boundedInputs = ['homeWins', 'homeDraws', 'awayWins', 'awayDraws', 'num1', 'num2', 'num5', 'num6'];
+            boundedInputs.forEach(id => {
+                document.getElementById(id).max = val;
+            });
+
+            // Update UI Texts
+            document.querySelectorAll('.dynamic-match-count-text').forEach(el => el.innerText = `(Per ${val} Pertandingan)`);
+            document.querySelectorAll('.dynamic-match-count-label').forEach(el => el.innerText = `${val} Laga`);
+
+            // Apply dynamic balancing incase existing values exceed new max
+            balanceAllInputs();
+        };
+
+        function balanceAllInputs() {
+            const tm = window.globalTotalMatches;
+            
+            // Re-evaluate Home
+            let hw = parseInt(document.getElementById('homeWins').value) || 0;
+            let hd = parseInt(document.getElementById('homeDraws').value) || 0;
+            if (hw > tm) hw = tm;
+            if (hw + hd > tm) hd = tm - hw;
+            document.getElementById('homeWins').value = hw;
+            document.getElementById('homeDraws').value = hd;
+
+            // Re-evaluate Away
+            let aw = parseInt(document.getElementById('awayWins').value) || 0;
+            let ad = parseInt(document.getElementById('awayDraws').value) || 0;
+            if (aw > tm) aw = tm;
+            if (aw + ad > tm) ad = tm - aw;
+            document.getElementById('awayWins').value = aw;
+            document.getElementById('awayDraws').value = ad;
+
+            syncInputsFromSliders();
+            calculateMatch();
+        }
+
+        window.switchInputTab = function(mode) {
+            const btnSlider = document.getElementById('tabBtnSlider');
+            const btnNumber = document.getElementById('tabBtnNumber');
+            const modeSlider = document.getElementById('inputModeSlider');
+            const modeNumber = document.getElementById('inputModeNumber');
+
+            if (mode === 'slider') {
+                btnSlider.className = "flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 bg-emerald-600 text-white shadow-md";
+                btnNumber.className = "flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white";
+                modeSlider.classList.remove('hidden');
+                modeNumber.classList.add('hidden');
+            } else {
+                btnNumber.className = "flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 bg-emerald-600 text-white shadow-md";
+                btnSlider.className = "flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white";
+                modeNumber.classList.remove('hidden');
+                modeSlider.classList.add('hidden');
+            }
+        };
+
+        window.handleHomeWinsInput = function() {
+            const tm = window.globalTotalMatches;
+            let w = parseInt(document.getElementById('homeWins').value) || 0;
+            let d = parseInt(document.getElementById('homeDraws').value) || 0;
+            if (w + d > tm) {
+                d = Math.max(0, tm - w);
+                document.getElementById('homeDraws').value = d;
+            }
+            syncInputsFromSliders();
+            calculateMatch();
+        };
+
+        window.handleHomeDrawsInput = function() {
+            const tm = window.globalTotalMatches;
+            let w = parseInt(document.getElementById('homeWins').value) || 0;
+            let d = parseInt(document.getElementById('homeDraws').value) || 0;
+            if (w + d > tm) {
+                w = Math.max(0, tm - d);
+                document.getElementById('homeWins').value = w;
+            }
+            syncInputsFromSliders();
+            calculateMatch();
+        };
+
+        window.handleAwayWinsInput = function() {
+            const tm = window.globalTotalMatches;
+            let w = parseInt(document.getElementById('awayWins').value) || 0;
+            let d = parseInt(document.getElementById('awayDraws').value) || 0;
+            if (w + d > tm) {
+                d = Math.max(0, tm - w);
+                document.getElementById('awayDraws').value = d;
+            }
+            syncInputsFromSliders();
+            calculateMatch();
+        };
+
+        window.handleAwayDrawsInput = function() {
+            const tm = window.globalTotalMatches;
+            let w = parseInt(document.getElementById('awayWins').value) || 0;
+            let d = parseInt(document.getElementById('awayDraws').value) || 0;
+            if (w + d > tm) {
+                w = Math.max(0, tm - d);
+                document.getElementById('awayWins').value = w;
+            }
+            syncInputsFromSliders();
+            calculateMatch();
+        };
+
+        window.handleSliderChange = function() {
+            syncInputsFromSliders();
+            calculateMatch();
+        };
+
+        window.handleNumberedInputChange = function(changedId) {
+            const tm = window.globalTotalMatches;
+            let hw = parseInt(document.getElementById('num1').value) || 0;
+            let hd = parseInt(document.getElementById('num2').value) || 0;
+            let aw = parseInt(document.getElementById('num5').value) || 0;
+            let ad = parseInt(document.getElementById('num6').value) || 0;
+
+            if (changedId === 'num1' && hw + hd > tm) {
+                hd = Math.max(0, tm - hw);
+                document.getElementById('num2').value = hd;
+            } else if (changedId === 'num2' && hw + hd > tm) {
+                hw = Math.max(0, tm - hd);
+                document.getElementById('num1').value = hw;
+            } else if (changedId === 'num5' && aw + ad > tm) {
+                ad = Math.max(0, tm - aw);
+                document.getElementById('num6').value = ad;
+            } else if (changedId === 'num6' && aw + ad > tm) {
+                aw = Math.max(0, tm - ad);
+                document.getElementById('num5').value = aw;
+            }
+
+            document.getElementById('homeWins').value = document.getElementById('num1').value;
+            document.getElementById('homeDraws').value = document.getElementById('num2').value;
+            document.getElementById('homeScored').value = document.getElementById('num3').value;
+            document.getElementById('homeConceded').value = document.getElementById('num4').value;
+            document.getElementById('awayWins').value = document.getElementById('num5').value;
+            document.getElementById('awayDraws').value = document.getElementById('num6').value;
+            document.getElementById('awayScored').value = document.getElementById('num7').value;
+            document.getElementById('awayConceded').value = document.getElementById('num8').value;
+
+            calculateMatch();
+        };
+
+        function syncInputsFromSliders() {
+            document.getElementById('num1').value = document.getElementById('homeWins').value;
+            document.getElementById('num2').value = document.getElementById('homeDraws').value;
+            document.getElementById('num3').value = document.getElementById('homeScored').value;
+            document.getElementById('num4').value = document.getElementById('homeConceded').value;
+            document.getElementById('num5').value = document.getElementById('awayWins').value;
+            document.getElementById('num6').value = document.getElementById('awayDraws').value;
+            document.getElementById('num7').value = document.getElementById('awayScored').value;
+            document.getElementById('num8').value = document.getElementById('awayConceded').value;
+        }
+
+        // POISSON ENGINE
+        function poissonProbability(k, lambda) {
+            return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
+        }
+
+        function factorial(n) {
+            if (n === 0 || n === 1) return 1;
+            let res = 1;
+            for (let i = 2; i <= n; i++) res *= i;
+            return res;
+        }
+
+        window.calculateMatch = function() {
+            const tm = window.globalTotalMatches;
+
+            const homeName = document.getElementById('homeTeamName').value.trim() || 'Home';
+            const awayName = document.getElementById('awayTeamName').value.trim() || 'Away';
+            document.getElementById('displayHomeName').innerText = homeName;
+            document.getElementById('displayAwayName').innerText = awayName;
+
+            const hw = parseInt(document.getElementById('homeWins').value) || 0;
+            const hd = parseInt(document.getElementById('homeDraws').value) || 0;
+            const hs = parseInt(document.getElementById('homeScored').value) || 0;
+            const hc = parseInt(document.getElementById('homeConceded').value) || 0;
+
+            const aw = parseInt(document.getElementById('awayWins').value) || 0;
+            const ad = parseInt(document.getElementById('awayDraws').value) || 0;
+            const as = parseInt(document.getElementById('awayScored').value) || 0;
+            const ac = parseInt(document.getElementById('awayConceded').value) || 0;
+
+            // UI Texts
+            document.getElementById('homeWinsVal').innerText = `${hw} Match`;
+            document.getElementById('homeDrawsVal').innerText = `${hd} Match`;
+            document.getElementById('homeScoredVal').innerText = `${hs} Gol (${(hs/tm).toFixed(2)} / laga)`;
+            document.getElementById('homeConcededVal').innerText = `${hc} Gol (${(hc/tm).toFixed(2)} / laga)`;
+
+            document.getElementById('awayWinsVal').innerText = `${aw} Match`;
+            document.getElementById('awayDrawsVal').innerText = `${ad} Match`;
+            document.getElementById('awayScoredVal').innerText = `${as} Gol (${(as/tm).toFixed(2)} / laga)`;
+            document.getElementById('awayConcededVal').innerText = `${ac} Gol (${(ac/tm).toFixed(2)} / laga)`;
+
+            const homePPG = ((hw * 3) + (hd * 1)) / tm;
+            const awayPPG = ((aw * 3) + (ad * 1)) / tm;
+            const homeLosses = Math.max(0, tm - hw - hd);
+            const awayLosses = Math.max(0, tm - aw - ad);
+
+            document.getElementById('homeBadge').innerText = `${hw}M - ${hd}S - ${homeLosses}K (PPG: ${homePPG.toFixed(2)})`;
+            document.getElementById('awayBadge').innerText = `${aw}M - ${ad}S - ${awayLosses}K (PPG: ${awayPPG.toFixed(2)})`;
+
+            // xG calculation
+            const avgHomeScored = hs / tm;
+            const avgHomeConceded = hc / tm;
+            const avgAwayScored = as / tm;
+            const avgAwayConceded = ac / tm;
+
+            let xGHome = Math.max(0.1, ((avgHomeScored + avgAwayConceded) / 2) * (0.8 + (homePPG / 10)));
+            let xGAway = Math.max(0.1, ((avgAwayScored + avgHomeConceded) / 2) * (0.8 + (awayPPG / 10)));
+            const totalXG = xGHome + xGAway;
+
+            document.getElementById('xGHomeText').innerText = xGHome.toFixed(2);
+            document.getElementById('xGAwayText').innerText = xGAway.toFixed(2);
+            document.getElementById('totalXGText').innerText = totalXG.toFixed(2);
+
+            let probHomeWin = 0, probDraw = 0, probAwayWin = 0;
+            let probOver15 = 0, probOver25 = 0, probOver35 = 0, probBTTS = 0;
+
+            const scoresList = [];
+            const matrix = [];
+
+            for (let h = 0; h <= 6; h++) {
+                matrix[h] = [];
+                const pH = poissonProbability(h, xGHome);
+                for (let a = 0; a <= 6; a++) {
+                    const pA = poissonProbability(a, xGAway);
+                    const prob = pH * pA;
+                    matrix[h][a] = prob;
+
+                    if (h > a) probHomeWin += prob;
+                    else if (h === a) probDraw += prob;
+                    else probAwayWin += prob;
+
+                    if (h + a > 1.5) probOver15 += prob;
+                    if (h + a > 2.5) probOver25 += prob;
+                    if (h + a > 3.5) probOver35 += prob;
+                    if (h > 0 && a > 0) probBTTS += prob;
+
+                    scoresList.push({ score: `${h}-${a}`, prob: prob });
+                }
+            }
+
+            const sum1X2 = probHomeWin + probDraw + probAwayWin;
+            const pHomePct = (probHomeWin / sum1X2) * 100;
+            const pDrawPct = (probDraw / sum1X2) * 100;
+            const pAwayPct = (probAwayWin / sum1X2) * 100;
+
+            document.getElementById('probHome').innerText = `${pHomePct.toFixed(1)}%`;
+            document.getElementById('probDraw').innerText = `${pDrawPct.toFixed(1)}%`;
+            document.getElementById('probAway').innerText = `${pAwayPct.toFixed(1)}%`;
+            document.getElementById('oddsHome').innerText = (100 / Math.max(0.1, pHomePct)).toFixed(2);
+            document.getElementById('oddsDraw').innerText = (100 / Math.max(0.1, pDrawPct)).toFixed(2);
+            document.getElementById('oddsAway').innerText = (100 / Math.max(0.1, pAwayPct)).toFixed(2);
+
+            const pOU15 = Math.min(99.9, probOver15 * 100);
+            const pOU25 = Math.min(99.9, probOver25 * 100);
+            const pOU35 = Math.min(99.9, probOver35 * 100);
+            const pBTTS = Math.min(99.9, probBTTS * 100);
+
+            document.getElementById('ou15Val').innerText = `${pOU15.toFixed(1)}%`;
+            document.getElementById('ou15Bar').style.width = `${pOU15}%`;
+            document.getElementById('ou25Val').innerText = `${pOU25.toFixed(1)}%`;
+            document.getElementById('ou25Bar').style.width = `${pOU25}%`;
+            document.getElementById('ou35Val').innerText = `${pOU35.toFixed(1)}%`;
+            document.getElementById('ou35Bar').style.width = `${pOU35}%`;
+
+            document.getElementById('bttsVal').innerText = `${pBTTS.toFixed(1)}%`;
+            document.getElementById('bttsYesText').innerText = `${pBTTS.toFixed(1)}%`;
+            document.getElementById('bttsNoText').innerText = `${(100 - pBTTS).toFixed(1)}%`;
+
+            // CUSTOM LOGIC: 1X2 / DC Recommendation Rule
+            let recText = "";
+            if (pHomePct + pDrawPct >= 75) {
+                recText = `1X2: Menang ${homeName}`;
+            } else if (pHomePct + pDrawPct < 75 && pHomePct >= pAwayPct) {
+                recText = `Double Chance: ${homeName} / Seri (1X)`;
+            } else if (pAwayPct + pDrawPct >= 75) {
+                recText = `1X2: Menang ${awayName}`;
+            } else {
+                recText = `Double Chance: Seri / ${awayName} (X2)`;
+            }
+
+            document.getElementById('recommendation1X2DC').innerText = recText;
+
+            renderOutcomeChart(pHomePct, pDrawPct, pAwayPct);
+            scoresList.sort((a, b) => b.prob - a.prob);
+            renderTopScores(scoresList.slice(0, 5));
+            renderHeatmapGrid(matrix);
+
+            globalCurrentCalculations = {
+                homeName, awayName, xGHome, xGAway, totalXG,
+                probHome: pHomePct.toFixed(1), probDraw: pDrawPct.toFixed(1), probAway: pAwayPct.toFixed(1),
+                oddsHome: (100 / Math.max(0.1, pHomePct)).toFixed(2), oddsDraw: (100 / Math.max(0.1, pDrawPct)).toFixed(2), oddsAway: (100 / Math.max(0.1, pAwayPct)).toFixed(2),
+                ou15: pOU15, ou25: pOU25, ou35: pOU35,
+                btts: pBTTS.toFixed(1), recText, tm
+            };
+        };
+
+        function renderOutcomeChart(pHome, pDraw, pAway) {
+            const ctx = document.getElementById('outcomeChart').getContext('2d');
+            if (outcomeChartInstance) outcomeChartInstance.destroy();
+            outcomeChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Home Win (1)', 'Draw (X)', 'Away Win (2)'],
+                    datasets: [{ data: [pHome, pDraw, pAway], backgroundColor: ['#10b981', '#f59e0b', '#6366f1'], borderRadius: 8 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: {
+                        y: { max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', callback: v => v + '%' } },
+                        x: { grid: { display: false }, ticks: { color: '#f8fafc', font: { weight: 'bold' } } }
+                    }
+                }
+            });
+        }
+
+        function renderTopScores(top5) {
+            const container = document.getElementById('topScoresContainer');
+            container.innerHTML = '';
+            top5.forEach((item, index) => {
+                const pct = (item.prob * 100).toFixed(1);
+                container.innerHTML += `
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center space-y-1">
+                        <div class="text-[10px] text-slate-500 font-semibold">Rank #${index + 1}</div>
+                        <div class="text-base font-black text-amber-400">${item.score}</div>
+                        <div class="text-[11px] font-bold text-slate-300">${pct}%</div>
+                    </div>`;
+            });
+        }
+
+        function renderHeatmapGrid(matrix) {
+            const container = document.getElementById('heatmapGrid');
+            container.innerHTML = '';
+            for (let h = 0; h <= 6; h++) {
+                let rowHtml = `<div class="grid grid-cols-8 gap-1 text-center text-[10px]">
+                    <div class="font-bold text-emerald-400 flex items-center justify-center bg-slate-950/60 rounded-md">${h}</div>`;
+                for (let a = 0; a <= 6; a++) {
+                    const pct = (matrix[h][a] * 100).toFixed(1);
+                    let bgClass = "bg-slate-950 text-slate-400";
+                    if (pct > 8) bgClass = "bg-emerald-600/60 text-white font-bold border border-emerald-400/40";
+                    else if (pct > 4) bgClass = "bg-emerald-800/40 text-emerald-200";
+                    rowHtml += `<div class="${bgClass} p-2 rounded-md flex flex-col justify-center items-center">
+                        <span>${h}-${a}</span><span class="text-[9px] opacity-80">${pct}%</span>
+                    </div>`;
+                }
+                rowHtml += `</div>`;
+                container.innerHTML += rowHtml;
+            }
+        }
+
+        // SUMMARY CLIPBOARD
+        window.copyPredictionSummary = function() {
+            if (!globalCurrentCalculations) return;
+            const calc = globalCurrentCalculations;
+
+            const ouList = [
+                { name: 'Over 1.5 Gol', val: calc.ou15 }, { name: 'Under 1.5 Gol', val: 100 - calc.ou15 },
+                { name: 'Over 2.5 Gol', val: calc.ou25 }, { name: 'Under 2.5 Gol', val: 100 - calc.ou25 },
+                { name: 'Over 3.5 Gol', val: calc.ou35 }, { name: 'Under 3.5 Gol', val: 100 - calc.ou35 }
+            ];
+            ouList.sort((a, b) => b.val - a.val);
+            const topOU = ouList[0];
+
+            const summaryText = `==================================================
+⚽ eL Predict - Ringkasan Analisis Matchup
+==================================================
+Pertandingan : ${calc.homeName} vs ${calc.awayName}
+Berdasarkan  : ${calc.tm} Laga Terakhir
+Ekspektasi Gol: ${calc.xGHome.toFixed(2)} (Home) vs ${calc.xGAway.toFixed(2)} (Away)
+Total xG     : ${calc.totalXG.toFixed(2)}
+
+--------------------------------------------------
+📊 PROBABILITAS PASAR 1X2 & ODDS ADIL
+--------------------------------------------------
+• Home Win (1): ${calc.probHome}% | Odds Adil: ${calc.oddsHome}
+• Draw (X)    : ${calc.probDraw}% | Odds Adil: ${calc.oddsDraw}
+• Away Win (2): ${calc.probAway}% | Odds Adil: ${calc.oddsAway}
+
+--------------------------------------------------
+🔥 PASARAN GOL UTAMA
+--------------------------------------------------
+• Opsi Dominan Mutlak: ${topOU.name} (${topOU.val.toFixed(1)}%)
+• Both Teams to Score: BTTS ${parseFloat(calc.btts) >= 50 ? 'Ya' : 'Tidak'} (${calc.btts}%)
+
+--------------------------------------------------
+🎯 REKOMENDASI UTAMA HASIL (1X2 / DC)
+--------------------------------------------------
+• ${calc.recText}
+--------------------------------------------------`;
+
+            const buffer = document.getElementById('clipboardBuffer');
+            buffer.value = summaryText;
+            buffer.select();
+            document.execCommand('copy');
+            showToast("Ringkasan analisis disalin ke clipboard!");
+        };
+
+        // CUSTOM TEAMS LOCAL STORAGE (STRICTLY SPLIT HOME/AWAY)
+        function updateSavedTeamsCounter() {
+            document.getElementById('savedTeamsCounter').innerText = customTeamsMemory.length;
+        }
+
+        window.saveTeamStats = function(slot) {
+            const isHome = slot === 'home';
+            const teamName = document.getElementById(isHome ? 'homeTeamName' : 'awayTeamName').value.trim();
+            if (!teamName) { showToast("Masukkan nama tim!"); return; }
+
+            let existing = customTeamsMemory.find(t => t.name.toLowerCase() === teamName.toLowerCase());
+            if (!existing) {
+                existing = { id: Date.now().toString(), name: teamName };
+                customTeamsMemory.push(existing);
+            }
+
+            const now = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+            const dataObj = {
+                w: parseInt(document.getElementById(isHome ? 'homeWins' : 'awayWins').value) || 0,
+                d: parseInt(document.getElementById(isHome ? 'homeDraws' : 'awayDraws').value) || 0,
+                s: parseInt(document.getElementById(isHome ? 'homeScored' : 'awayScored').value) || 0,
+                c: parseInt(document.getElementById(isHome ? 'homeConceded' : 'awayConceded').value) || 0,
+                tm: window.globalTotalMatches,
+                savedAt: now
+            };
+
+            if (isHome) existing.homeData = dataObj;
+            else existing.awayData = dataObj;
+
+            localStorage.setItem('eLPredict_CustomTeams', JSON.stringify(customTeamsMemory));
+            updateSavedTeamsCounter();
+            showToast(`Statistik ${isHome ? 'Kandang' : 'Tandang'} "${teamName}" disimpan!`);
+        };
+
+        window.openCustomTeamsModal = function() {
+            renderSavedTeamsList();
+            document.getElementById('customTeamsModal').classList.remove('hidden');
+        };
+
+        window.closeCustomTeamsModal = function() {
+            document.getElementById('customTeamsModal').classList.add('hidden');
+        };
+
+        window.setModalFilter = function(filter) {
+            currentModalFilter = filter;
+            document.getElementById('modalTabAll').className = filter === 'all' ? "flex-1 py-1.5 font-bold rounded-lg bg-emerald-600 text-white" : "flex-1 py-1.5 font-bold rounded-lg text-slate-400 hover:text-white";
+            document.getElementById('modalTabHome').className = filter === 'home' ? "flex-1 py-1.5 font-bold rounded-lg bg-emerald-600 text-white" : "flex-1 py-1.5 font-bold rounded-lg text-slate-400 hover:text-white";
+            document.getElementById('modalTabAway').className = filter === 'away' ? "flex-1 py-1.5 font-bold rounded-lg bg-emerald-600 text-white" : "flex-1 py-1.5 font-bold rounded-lg text-slate-400 hover:text-white";
+            renderSavedTeamsList();
+        };
+
+        function renderSavedTeamsList() {
+            const container = document.getElementById('savedTeamsListContainer');
+            container.innerHTML = '';
+
+            if (customTeamsMemory.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-xs text-slate-500">Belum ada data tim.</div>`;
+                return;
+            }
+
+            customTeamsMemory.forEach(team => {
+                const showHome = (currentModalFilter === 'all' || currentModalFilter === 'home') && team.homeData;
+                const showAway = (currentModalFilter === 'all' || currentModalFilter === 'away') && team.awayData;
+                if (!showHome && !showAway) return;
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-3";
+
+                let homeHTML = showHome ? `
+                    <div class="bg-slate-900 p-2.5 rounded-lg border border-emerald-800/50 space-y-1.5">
+                        <div class="flex justify-between items-center text-xs font-bold text-emerald-400">
+                            <span>🏠 Data Kandang (${team.homeData.tm} Laga)</span>
+                        </div>
+                        <div class="text-[11px] text-slate-300">
+                            W/D/L: ${team.homeData.w}/${team.homeData.d}/${team.homeData.tm - team.homeData.w - team.homeData.d} | Gol: ${team.homeData.s}-${team.homeData.c}
+                        </div>
+                        <button onclick="applyTeamToSlot('${team.id}', 'home')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-1.5 rounded text-xs transition">
+                            🏠 Pasang Ke Home
+                        </button>
+                    </div>` : '';
+
+                let awayHTML = showAway ? `
+                    <div class="bg-slate-900 p-2.5 rounded-lg border border-indigo-800/50 space-y-1.5">
+                        <div class="flex justify-between items-center text-xs font-bold text-indigo-400">
+                            <span>✈️ Data Tandang (${team.awayData.tm} Laga)</span>
+                        </div>
+                        <div class="text-[11px] text-slate-300">
+                            W/D/L: ${team.awayData.w}/${team.awayData.d}/${team.awayData.tm - team.awayData.w - team.awayData.d} | Gol: ${team.awayData.s}-${team.awayData.c}
+                        </div>
+                        <button onclick="applyTeamToSlot('${team.id}', 'away')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-1.5 rounded text-xs transition">
+                            ✈️ Pasang Ke Away
+                        </button>
+                    </div>` : '';
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <span class="font-bold text-white text-sm">${team.name}</span>
+                        <button onclick="deleteCustomTeam('${team.id}')" class="text-xs text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i> Hapus</button>
+                    </div>
+                    <div class="grid grid-cols-1 ${showHome && showAway ? 'sm:grid-cols-2' : ''} gap-2">
+                        ${homeHTML}
+                        ${awayHTML}
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
+
+        window.applyTeamToSlot = function(teamId, slot) {
+            const team = customTeamsMemory.find(t => t.id === teamId);
+            if (!team) return;
+
+            const data = slot === 'home' ? team.homeData : team.awayData;
+            
+            // Auto Update Global Matches Limit if needed
+            document.getElementById('totalMatchesInput').value = data.tm;
+            window.updateTotalMatches();
+
+            if (slot === 'home') {
+                document.getElementById('homeTeamName').value = team.name;
+                document.getElementById('homeWins').value = data.w;
+                document.getElementById('homeDraws').value = data.d;
+                document.getElementById('homeScored').value = data.s;
+                document.getElementById('homeConceded').value = data.c;
+            } else {
+                document.getElementById('awayTeamName').value = team.name;
+                document.getElementById('awayWins').value = data.w;
+                document.getElementById('awayDraws').value = data.d;
+                document.getElementById('awayScored').value = data.s;
+                document.getElementById('awayConceded').value = data.c;
+            }
+
+            syncInputsFromSliders();
+            calculateMatch();
+            closeCustomTeamsModal();
+            showToast(`Data tim "${team.name}" dimuat!`);
+        };
+
+        window.deleteCustomTeam = function(teamId) {
+            customTeamsMemory = customTeamsMemory.filter(t => t.id !== teamId);
+            localStorage.setItem('eLPredict_CustomTeams', JSON.stringify(customTeamsMemory));
+            updateSavedTeamsCounter();
+            renderSavedTeamsList();
+        };
+
+        window.exportCustomTeamsText = function() {
+            const jsonText = JSON.stringify(customTeamsMemory);
+            document.getElementById('importTeamsTextarea').value = jsonText;
+            const buffer = document.getElementById('clipboardBuffer');
+            buffer.value = jsonText;
+            buffer.select();
+            document.execCommand('copy');
+            showToast("Data JSON disalin ke clipboard!");
+        };
+
+        window.importCustomTeamsText = function() {
+            const text = document.getElementById('importTeamsTextarea').value.trim();
+            if (!text) return;
+            try {
+                const parsed = JSON.parse(text);
+                if (Array.isArray(parsed)) {
+                    customTeamsMemory = parsed;
+                    localStorage.setItem('eLPredict_CustomTeams', JSON.stringify(customTeamsMemory));
+                    updateSavedTeamsCounter();
+                    renderSavedTeamsList();
+                    showToast("Berhasil impor data JSON!");
+                }
+            } catch (e) { showToast("Format JSON tidak valid!"); }
+        };
+
+        // GEMINI AI INTEGRATION
+        async function fetchGeminiAPI(systemInstruction, userQuery, retries = 3, delay = 1000) {
+            const apiKey = ""; 
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            
+            const requestBody = {
+                contents: [{ role: 'user', parts: [{ text: `${systemInstruction}\n\nUser Question:\n${userQuery}` }] }]
+            };
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody)
+                    });
+                    if (response.status === 429) {
+                        await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
+                        continue;
+                    }
+                    if (!response.ok) throw new Error(`API error: ${response.status}`);
+                    const data = await response.json();
+                    return data?.candidates?.[0]?.content?.parts?.[0]?.text || "Gagal mendapat respons AI.";
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
+                }
+            }
+        }
+
+        window.generateGeminiAnalysis = async function() {
+            if (!globalCurrentCalculations) return;
+            const btn = document.getElementById('btnGenerateAI');
+            const outputCard = document.getElementById('aiAnalysisOutput');
+            const contentDiv = document.getElementById('aiAnalysisContent');
+
+            btn.disabled = true;
+            document.getElementById('btnAILabel').innerText = "Menghubungi Gemini AI...";
+            outputCard.classList.remove('hidden');
+            contentDiv.innerHTML = `<div class="animate-pulse text-purple-400">Analisis Taktis sedang diproses...</div>`;
+
+            const c = globalCurrentCalculations;
+            const sysPrompt = `Anda adalah Analis Bola Profesional. Berikan Analisis Taktis & Value Bet berdasarkan data Poisson. Bahasa Indonesia ringkas.`;
+            const userCtx = `Laga: ${c.homeName} vs ${c.awayName}. (Analisis dari ${c.tm} Laga)
+xG: ${c.xGHome.toFixed(2)} - ${c.xGAway.toFixed(2)}. 
+Probabilitas: 1 (${c.probHome}%), X (${c.probDraw}%), 2 (${c.probAway}%).
+BTTS: ${c.btts}%. Rekomendasi 1X2 Model: ${c.recText}.`;
+
+            try {
+                const res = await fetchGeminiAPI(sysPrompt, userCtx);
+                contentDiv.innerText = res;
+            } catch (e) {
+                contentDiv.innerText = "Gagal memuat analisis. Coba lagi nanti.";
+            } finally {
+                btn.disabled = false;
+                document.getElementById('btnAILabel').innerText = "Generasikan Analisis Taktis & Value Bet AI";
+            }
+        };
+
+        window.sendAIChatQuery = async function() {
+            const promptInput = document.getElementById('aiUserPrompt');
+            const userText = promptInput.value.trim();
+            if (!userText || !globalCurrentCalculations) return;
+
+            const chatCont = document.getElementById('chatHistoryContainer');
+            chatCont.classList.remove('hidden');
+            
+            chatCont.innerHTML += `<div class="bg-slate-900 p-2 rounded-lg text-slate-200"><span class="text-emerald-400 font-bold">Anda:</span> ${userText}</div>`;
+            const aiBubbleId = `ai-msg-${Date.now()}`;
+            chatCont.innerHTML += `<div id="${aiBubbleId}" class="bg-purple-950/40 p-2 rounded-lg text-purple-200 animate-pulse">Gemini AI memikirkan jawaban...</div>`;
+            chatCont.scrollTop = chatCont.scrollHeight;
+            
+            promptInput.value = '';
+            document.getElementById('btnSendChat').disabled = true;
+
+            const c = globalCurrentCalculations;
+            const sysPrompt = `Anda adalah Asisten Analis AI. Jawab singkat untuk skenario laga ${c.homeName} vs ${c.awayName} (xG: ${c.xGHome.toFixed(2)} - ${c.xGAway.toFixed(2)}).`;
+
+            try {
+                const res = await fetchGeminiAPI(sysPrompt, userText);
+                const bubble = document.getElementById(aiBubbleId);
+                bubble.classList.remove('animate-pulse');
+                bubble.innerHTML = `<span class="text-purple-400 font-bold">Gemini:</span> ${res}`;
+            } catch (e) {
+                document.getElementById(aiBubbleId).innerText = "Error mengambil respons AI.";
+            } finally {
+                document.getElementById('btnSendChat').disabled = false;
+                chatCont.scrollTop = chatCont.scrollHeight;
+            }
+        };
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        window.onload = function() {
+            updateSavedTeamsCounter();
+            updateTotalMatches(); 
+        };
+    </script>
+</body>
+</html>
